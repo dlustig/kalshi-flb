@@ -1,0 +1,17 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+dist/
+*.egg-info/
+
+# Data + DB (the 72 GB DuckDB file and its logs are the expensive artifact; rebuild via `kalshi-flb backfill`)
+data/
+*.duckdb
+*.duckdb.wal
+
+# Local editor / agent state — never commit
+.claude/settings.local.json
+.remember/
+.DS_Store

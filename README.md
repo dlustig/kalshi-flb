@@ -1,25 +1,49 @@
 # kalshi-flb
 
-**A read-only pipeline that answers one pre-committed question with confidence
-intervals: does Kalshi's favorite–longshot bias survive publication, net of
-fees?**
+*Does Kalshi's favorite–longshot bias survive being published — net of fees? A
+read-only measurement over 672 million real trades.*
 
-Prediction-market prices are biased — longshots are overpriced, favorites
-underpriced (Bürgi, Deng & Whelan, SSRN 2025). The authors warned that
-publishing the finding might erode it. This project collects **672 million
-trades** from Kalshi's public API into DuckDB and measures whether the
-favorite-side **maker** edge at 80–97¢ still exists after the 2025-09-18
-publication date — pre-committing to a go/no-go rule *before* looking at the
-numbers.
+## TL;DR
 
-No trading, no authentication, no order placement. Just the measurement.
+On a prediction market like [Kalshi](https://kalshi.com), a contract pays **$1
+if some event happens** and **$0 if it doesn't**. The price is the crowd's odds:
+a contract at **92¢** means "the market thinks this is 92% likely."
+
+Decades of research show these prices are subtly **biased** — heavy favorites
+(80–97¢) win slightly *more* often than their price implies, while longshots
+(<20¢) win *less*. So systematically buying favorites is, on average, a small edge.
+
+**A worked example.** A market is trading at **92¢** on the favorite. You post a
+**limit order** at 92¢ — a *maker* order: you rest your price and wait for
+someone to trade against it, instead of crossing the spread and paying up — and
+it fills:
+
+- If it resolves **Yes** → you collect **$1.00**, a **+8¢** gain on your 92¢.
+- If it resolves **No** → you lose your **92¢**.
+- Historically, ~92¢ contracts resolve Yes about **93%** of the time — a hair
+  more often than the 92% the price implies. Repeated across many fills, that
+  hair is a small **positive** expected return (a fraction of a cent up to ~1¢
+  per contract) — *but only* if you're the maker paying near-zero fees. Cross
+  the spread as a **taker** and the fee eats the edge.
+
+The catch: the academic study that documented this bias (Bürgi, Deng & Whelan)
+was **published in September 2025**, and the authors warned that publicity might
+erode it. **This repo checks whether it did** — collecting **672M real Kalshi
+trades** into DuckDB and re-measuring the edge net of fees, with the pass/fail
+rule fixed *before* looking at the numbers.
+
+**The answer: it survives — about a third of its former size, only for makers,
+and not in sports.** (Full verdict below and in [`VERDICT.md`](VERDICT.md).)
+
+> Scope: **read-only, no authentication, no order placement.** This measures the
+> edge; it does not trade it.
 
 ---
 
 ## The answer: GO — attenuated ~62%, and not in sports
 
-The edge survives, but only for makers, mostly outside sports, and roughly a
-third of its former size.
+The pre-committed GO criterion is met. Here is the headline statistic — maker
+net expected value in the 80–97¢ favorite band, pre- vs. post-publication:
 
 | Maker net EV, 80–97¢ | point estimate | clustered 95% CI | n |
 |---|---:|:---:|---|

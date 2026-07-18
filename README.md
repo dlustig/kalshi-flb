@@ -3,6 +3,9 @@
 *Does Kalshi's favorite–longshot bias survive being published — net of fees? A
 read-only measurement over 672 million real trades.*
 
+**▶ [Explore the interactive dashboard →](https://dlustig.github.io/kalshi-flb/)**
+— filter the edge by category, pre vs. post, and maker vs. taker, live in the browser.
+
 ## TL;DR
 
 On a prediction market like [Kalshi](https://kalshi.com), a contract pays **$1
@@ -71,22 +74,25 @@ tables, net-return curves, segmentation, sensitivity, exclusions, caveats):
 
 ## Architecture
 
+```mermaid
+flowchart TB
+    API["Kalshi public API - no auth"]
+    C["collector: resumable, rate-limited"]
+    DB[("DuckDB: ~672M trades, ~72 GB")]
+    AGG["time-partitioned aggregation<br/>(~1.34B-row panel never materialized)"]
+    OBS[("agg_obs: event x bucket x segment sums")]
+    OUT["report.md, plots, VERDICT.md, interactive dashboard"]
+
+    API -- "paced ~16 req/s, cursor pages, parallel time-window shards" --> C
+    C --> DB
+    DB -- "lazy SQL views: v_universe, v_obs (2 obs per trade)" --> AGG
+    AGG --> OBS
+    OBS -- "event-clustered bootstrap (B=1000)" --> OUT
 ```
-Kalshi public API (no auth)
-      │   paced ~16 req/s · cursor pagination · blind exponential backoff (no Retry-After)
-      │   parallel disjoint time-window shards · per-shard failure isolation · resumable cursors
-      ▼
-  collector ──► DuckDB  (series · events · markets · trades ≈672M rows / ≈72 GB)
-      │
-      │   lazy SQL views:
-      │     v_universe — settled binary non-parlay markets + category/fee metadata
-      │     v_obs      — every trade → its Yes-side and No-side role-tagged observation
-      ▼
-  time-partitioned aggregation ──► agg_obs  (event × bucket × segment sums)
-      │   the ~1.34-billion-row expanded panel is NEVER materialized
-      ▼
-  event-clustered bootstrap (B=1000) ──► report.md · plots · VERDICT.md
-```
+
+The panel expands each trade into a Yes-side and a No-side observation
+(~1.34B rows); it is never materialized — aggregation runs in DuckDB in
+time-partitioned passes into `agg_obs`, and every statistic reads that.
 
 | Module | Responsibility |
 |---|---|

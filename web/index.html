@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kalshi favorite–longshot bias — interactive results</title>
+<meta name="description" content="Explore whether Kalshi's favorite–longshot bias survives publication, net of fees, across 672M trades — calibration, net returns, and the edge by category.">
+<style>
+  /* ---- dataviz reference palette, as roles (light default, dark overrides) ---- */
+  :root {
+    color-scheme: light;
+    --plane:      #f9f9f7;
+    --surface:    #fcfcfb;
+    --ink:        #0b0b0b;
+    --ink-2:      #52514e;
+    --muted:      #898781;
+    --grid:       #e1e0d9;
+    --baseline:   #c3c2b7;
+    --border:     rgba(11,11,11,0.10);
+    --series-1:   #2a78d6;   /* pre / maker */
+    --series-2:   #008300;   /* post / taker */
+    --pos:        #2a78d6;   /* diverging: positive edge (cool) */
+    --neg:        #e34948;   /* diverging: negative edge (warm) */
+    --good:       #006300;
+    --band:       rgba(42,120,214,0.10);
+    --accent-soft:#eef4fc;
+    --shadow:     0 1px 2px rgba(11,11,11,.04), 0 8px 24px rgba(11,11,11,.06);
+  }
+  :root[data-theme="dark"], :root:where(:not([data-theme="light"])) {
+    /* media-query dark is applied below; this keeps the toggle authoritative */
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --plane:#0d0d0d; --surface:#1a1a19; --ink:#fff; --ink-2:#c3c2b7;
+      --muted:#898781; --grid:#2c2c2a; --baseline:#383835;
+      --border:rgba(255,255,255,0.10);
+      --series-1:#3987e5; --series-2:#008300; --pos:#3987e5; --neg:#e66767;
+      --good:#0ca30c; --band:rgba(57,135,229,0.12);
+      --accent-soft:#14243a; --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --plane:#0d0d0d; --surface:#1a1a19; --ink:#fff; --ink-2:#c3c2b7;
+    --muted:#898781; --grid:#2c2c2a; --baseline:#383835;
+    --border:rgba(255,255,255,0.10);
+    --series-1:#3987e5; --series-2:#008300; --pos:#3987e5; --neg:#e66767;
+    --good:#0ca30c; --band:rgba(57,135,229,0.12);
+    --accent-soft:#14243a; --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.4);
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  :focus-visible { outline: 2px solid var(--series-1); outline-offset: 2px; border-radius: 6px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  body {
+    margin: 0; background: var(--plane); color: var(--ink);
+    font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  a { color: var(--series-1); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 28px 20px 64px; }
+
+  /* header */
+  header { display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: flex-start;
+           justify-content: space-between; margin-bottom: 6px; }
+  h1 { font-size: 22px; line-height: 1.2; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .sub { color: var(--ink-2); max-width: 62ch; margin: 0; }
+  .verdict { margin-top: 12px; display: inline-flex; align-items: baseline; gap: 10px;
+             padding: 8px 14px; border: 1px solid var(--border); border-radius: 999px;
+             background: var(--surface); box-shadow: var(--shadow); }
+  .verdict b { color: var(--good); letter-spacing: .02em; }
+  .verdict span { color: var(--ink-2); font-size: 13.5px; }
+  .toplinks { font-size: 13.5px; color: var(--muted); display: flex; gap: 16px; }
+  .btn { cursor: pointer; border: 1px solid var(--border); background: var(--surface);
+         color: var(--ink-2); border-radius: 8px; padding: 6px 10px; font: inherit; font-size: 13px; }
+  .btn:hover { color: var(--ink); }
+
+  /* controls */
+  .controls { display: flex; flex-wrap: wrap; gap: 14px 18px; align-items: center;
+              margin: 22px 0 18px; padding: 12px 14px; border: 1px solid var(--border);
+              border-radius: 12px; background: var(--surface); box-shadow: var(--shadow); }
+  .ctl { display: flex; align-items: center; gap: 8px; }
+  .ctl > label { font-size: 12.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  select { font: inherit; font-size: 14px; color: var(--ink); background: var(--plane);
+           border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .seg button { border: 0; background: var(--plane); color: var(--ink-2); font: inherit;
+                font-size: 13.5px; padding: 6px 12px; cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--series-1); color: #fff; }
+  .spacer { flex: 1 1 auto; }
+
+  /* kpi row */
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+  .kpi { border: 1px solid var(--border); border-radius: 12px; background: var(--surface);
+         padding: 14px 16px; box-shadow: var(--shadow); }
+  .kpi .k-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .kpi .k-val { font-size: 26px; line-height: 1.1; margin-top: 6px; letter-spacing: -0.01em; }
+  .kpi .k-sub { font-size: 12.5px; color: var(--ink-2); margin-top: 4px; }
+  .pos { color: var(--pos); } .neg { color: var(--neg); }
+
+  /* chart grid */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .card { border: 1px solid var(--border); border-radius: 12px; background: var(--surface);
+          padding: 14px 16px 10px; box-shadow: var(--shadow); min-width: 0; }
+  .card.full { grid-column: 1 / -1; }
+  .card h2 { font-size: 15px; margin: 0 0 2px; }
+  .card .cap { font-size: 12.5px; color: var(--muted); margin: 0 0 8px; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12.5px; color: var(--ink-2); margin: 4px 0 2px; }
+  .legend .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  .chart-holder { position: relative; width: 100%; overflow-x: auto; }
+  svg { display: block; width: 100%; height: auto; }
+  svg text { fill: var(--muted); font: 11px system-ui, sans-serif; }
+  .ax-title { fill: var(--ink-2); font-size: 11.5px; }
+  .tick { stroke: var(--grid); stroke-width: 1; }
+  .baseline { stroke: var(--baseline); stroke-width: 1; }
+  .tabnum { font-variant-numeric: tabular-nums; }
+
+  /* tooltip */
+  .tip { position: absolute; pointer-events: none; opacity: 0; transform: translate(-50%, -108%);
+         background: var(--ink); color: var(--surface); font-size: 12px; line-height: 1.35;
+         padding: 6px 9px; border-radius: 7px; white-space: nowrap; z-index: 5; box-shadow: var(--shadow); }
+  .tip b { color: var(--surface); }
+
+  /* table view */
+  details.tableview { margin-top: 10px; }
+  details.tableview summary { cursor: pointer; font-size: 12.5px; color: var(--muted); }
+  table { border-collapse: collapse; width: 100%; margin-top: 8px; font-size: 12.5px; }
+  th, td { text-align: right; padding: 4px 8px; border-bottom: 1px solid var(--border); }
+  th:first-child, td:first-child { text-align: left; }
+
+  footer { margin-top: 30px; padding-top: 18px; border-top: 1px solid var(--border);
+           font-size: 12.5px; color: var(--ink-2); }
+  footer p { margin: 6px 0; }
+  code { background: var(--accent-soft); padding: 1px 5px; border-radius: 5px; font-size: 12px; }
+
+  @media (max-width: 760px) {
+    .grid2 { grid-template-columns: 1fr; }
+    .kpis { grid-template-columns: 1fr 1fr; }
+  }
+  .loading { padding: 40px; text-align: center; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Does Kalshi's favorite–longshot bias survive publication?</h1>
+      <p class="sub">An interactive read of <b>672M real trades</b>: heavy favorites
+        (80–97¢) have historically won slightly more often than their price implies.
+        A 2025 paper documented it; the authors warned publishing might erode it.
+        Explore what actually happened — by category, pre vs. post, maker vs. taker.</p>
+      <div class="verdict"><b>VERDICT: GO</b><span id="verdict-line">the edge survives, ~⅓ its former size, makers only, not in sports</span></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-end">
+      <button class="btn" id="theme" title="Toggle light/dark">◐ theme</button>
+      <div class="toplinks">
+        <a href="https://github.com/dlustig/kalshi-flb">repo ↗</a>
+        <a href="https://github.com/dlustig/kalshi-flb/blob/main/analysis/out/report.md">full report ↗</a>
+      </div>
+    </div>
+  </header>
+
+  <div id="app" class="loading">Loading data…</div>
+</div>
+
+<script>
+/* ============================================================================
+   Kalshi FLB — interactive dashboard.  All rendering is hand-rolled SVG (no
+   dependencies) so the page is self-contained: it runs as a static file, on
+   GitHub Pages, or as a preview artifact. Data comes from an inlined
+   `window.STATS` if present, otherwise from ./data/stats.json.
+   ============================================================================ */
+(async function () {
+  const STATS = window.STATS || await (await fetch('./data/stats.json')).json();
+  const app = document.getElementById('app');
+
+  // ---- small helpers -------------------------------------------------------
+  const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const fmt = (x, d = 2) => (x == null || Number.isNaN(x)) ? '—' : x.toFixed(d);
+  const signed = (x, d = 2) => (x == null) ? '—' : (x >= 0 ? '+' : '') + x.toFixed(d);
+  const commas = (n) => n.toLocaleString('en-US');
+  const el = (tag, attrs = {}, kids = []) => {
+    const NS = 'http://www.w3.org/2000/svg';
+    const svgTags = new Set(['svg','g','path','line','rect','circle','text','polyline','polygon']);
+    const e = svgTags.has(tag) ? document.createElementNS(NS, tag) : document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (k === 'text') e.textContent = v;
+      else if (k === 'html') e.innerHTML = v;
+      else if (v != null) e.setAttribute(k, v);
+    }
+    for (const c of [].concat(kids)) if (c) e.appendChild(c);
+    return e;
+  };
+
+  // ---- state ---------------------------------------------------------------
+  const state = {
+    category: 'All',
+    period: 'post',
+    liquidity: 'all',   // 'all' | 'liquid' (top volume tercile)
+  };
+
+  // ---- layout scaffold -----------------------------------------------------
+  app.className = '';
+  app.innerHTML = '';
+
+  const cats = ['All', ...STATS.meta.categories];
+  const controls = el('div', { class: 'controls' });
+  const catSel = el('select', { id: 'catSel', 'aria-label': 'Category' });
+  cats.forEach(c => catSel.appendChild(el('option', { value: c, text: c })));
+  const catCtl = el('div', { class: 'ctl' }, [el('label', { text: 'Category' }), catSel]);
+
+  const perSeg = seg('Period', ['pre', 'post'], ['Pre-pub', 'Post-pub'], 'period');
+  const liqSeg = seg('Bars', ['all', 'liquid'], ['All liquidity', 'Top tercile'], 'liquidity');
+
+  controls.append(catCtl, perSeg.node, liqSeg.node);
+  app.appendChild(controls);
+
+  const kpis = el('div', { class: 'kpis' });
+  app.appendChild(kpis);
+
+  const grid = el('div', { class: 'grid2' });
+  const calCard = card('Calibration — do favorites win as often as priced?',
+    'Win rate vs. price, by 5¢ bucket. The dashed line is perfect calibration; points above it mean the market underprices that bucket.');
+  const netCard = card('Net expected value per contract',
+    'Return after fees, by price bucket. The shaded band is the 80–97¢ favorite window this project tests.');
+  grid.append(calCard.node, netCard.node);
+  app.appendChild(grid);
+
+  const barCard = card('The edge by category (maker, 80–97¢)',
+    'Net EV per contract in the favorite window, by category, with clustered 95% CIs. Sorted; blue = positive edge, red = negative.', true);
+  app.appendChild(barCard.node);
+
+  app.appendChild(footer());
+
+  // ---- controls wiring -----------------------------------------------------
+  catSel.value = state.category;
+  catSel.addEventListener('change', () => { state.category = catSel.value; render(); });
+
+  function seg(label, values, labels, key) {
+    const node = el('div', { class: 'ctl' }, [el('label', { text: label })]);
+    const box = el('div', { class: 'seg', role: 'group', 'aria-label': label });
+    const btns = values.map((v, i) => {
+      const b = el('button', { type: 'button', text: labels[i], 'aria-pressed': String(state[key] === v) });
+      b.addEventListener('click', () => {
+        state[key] = v;
+        [...box.children].forEach((c, j) => c.setAttribute('aria-pressed', String(j === i)));
+        render();
+      });
+      return b;
+    });
+    btns.forEach(b => box.appendChild(b));
+    node.appendChild(box);
+    return { node };
+  }
+  function card(title, cap, full) {
+    const node = el('div', { class: 'card' + (full ? ' full' : '') });
+    node.append(el('h2', { text: title }), el('p', { class: 'cap', text: cap }));
+    const legend = el('div', { class: 'legend' });
+    const holder = el('div', { class: 'chart-holder' });
+    node.append(legend, holder);
+    return { node, legend, holder };
+  }
+
+  // ---- KPI row -------------------------------------------------------------
+  function renderKpis() {
+    const k = STATS.kpi;
+    kpis.innerHTML = '';
+    const tiles = [
+      ['Post-pub edge', signed(k.post.net_c) + '¢', `95% CI [${signed(k.post.ci_lo)}, ${signed(k.post.ci_hi)}]`, k.post.net_c >= 0 ? 'pos' : 'neg'],
+      ['Pre-pub edge', signed(k.pre.net_c) + '¢', `95% CI [${signed(k.pre.ci_lo)}, ${signed(k.pre.ci_hi)}]`, k.pre.net_c >= 0 ? 'pos' : 'neg'],
+      ['Attenuation', '−' + fmt(k.attenuation_pct, 0) + '%', 'edge lost after publication', ''],
+      ['Trades analyzed', commas(STATS.meta.n_trades), `${STATS.meta.trade_span[0]} → ${STATS.meta.trade_span[1]}`, ''],
+    ];
+    for (const [lab, val, sub, cls] of tiles) {
+      kpis.appendChild(el('div', { class: 'kpi' }, [
+        el('div', { class: 'k-label', text: lab }),
+        el('div', { class: 'k-val ' + cls + ' tabnum', text: val }),
+        el('div', { class: 'k-sub', text: sub }),
+      ]));
+    }
+  }
+
+  // ============================ chart primitives ============================
+  const PAD = { l: 46, r: 46, t: 12, b: 34 };
+  function frame(holder, w, h) {
+    holder.innerHTML = '';
+    const svg = el('svg', { viewBox: `0 0 ${w} ${h}`, width: w, height: h, role: 'img' });
+    holder.appendChild(svg);
+    const tip = el('div', { class: 'tip' });
+    holder.appendChild(tip);
+    return { svg, tip };
+  }
+  const sx = (v, dom, w) => PAD.l + (v - dom[0]) / (dom[1] - dom[0]) * (w - PAD.l - PAD.r);
+  const sy = (v, dom, h) => (h - PAD.b) - (v - dom[0]) / (dom[1] - dom[0]) * (h - PAD.t - PAD.b);
+
+  function axes(svg, w, h, xdom, ydom, xlab, ylab, xticks, yticks) {
+    // y gridlines + ticks
+    yticks.forEach(t => {
+      const y = sy(t, ydom, h);
+      svg.appendChild(el('line', { class: 'tick', x1: PAD.l, y1: y, x2: w - PAD.r, y2: y }));
+      svg.appendChild(el('text', { x: PAD.l - 6, y: y + 3, 'text-anchor': 'end', class: 'tabnum', text: t }));
+    });
+    xticks.forEach(t => {
+      const x = sx(t, xdom, w);
+      svg.appendChild(el('text', { x, y: h - PAD.b + 15, 'text-anchor': 'middle', class: 'tabnum', text: t }));
+    });
+    // zero baseline if in range
+    if (ydom[0] < 0 && ydom[1] > 0) {
+      const y0 = sy(0, ydom, h);
+      svg.appendChild(el('line', { class: 'baseline', x1: PAD.l, y1: y0, x2: w - PAD.r, y2: y0 }));
+    }
+    svg.appendChild(el('text', { x: (PAD.l + w - PAD.r) / 2, y: h - 2, 'text-anchor': 'middle', class: 'ax-title', text: xlab }));
+    svg.appendChild(el('text', { x: 12, y: (PAD.t + h - PAD.b) / 2, 'text-anchor': 'middle', class: 'ax-title',
+      transform: `rotate(-90 12 ${(PAD.t + h - PAD.b) / 2})`, text: ylab }));
+  }
+
+  function pathFrom(pts, xdom, ydom, w, h) {
+    return pts.map((p, i) => (i ? 'L' : 'M') + sx(p[0], xdom, w).toFixed(1) + ' ' + sy(p[1], ydom, h).toFixed(1)).join(' ');
+  }
+  function bandPath(pts, xdom, ydom, w, h) {
+    const top = pts.map(p => sx(p[0], xdom, w).toFixed(1) + ' ' + sy(p[2], ydom, h).toFixed(1));
+    const bot = pts.slice().reverse().map(p => sx(p[0], xdom, w).toFixed(1) + ' ' + sy(p[1], ydom, h).toFixed(1));
+    return 'M' + top.join(' L') + ' L' + bot.join(' L') + ' Z';
+  }
+
+  // Multi-series line chart with optional CI bands + hover crosshair.
+  function lineChart(holder, opts) {
+    const w = Math.max(holder.clientWidth || 520, 320), h = opts.h || 300;
+    const { svg, tip } = frame(holder, w, h);
+    const { xdom, ydom, xlab, ylab, xticks, yticks, series, refLine } = opts;
+    axes(svg, w, h, xdom, ydom, xlab, ylab, xticks, yticks);
+    if (refLine) {
+      svg.appendChild(el('path', { d: pathFrom(refLine, xdom, ydom, w, h),
+        fill: 'none', stroke: css('--baseline'), 'stroke-width': 1.2, 'stroke-dasharray': '4 4' }));
+    }
+    if (opts.bandRect) { // highlighted x-range (80–97¢)
+      const [a, b] = opts.bandRect;
+      svg.appendChild(el('rect', { x: sx(a, xdom, w), y: PAD.t, width: sx(b, xdom, w) - sx(a, xdom, w),
+        height: h - PAD.t - PAD.b, fill: css('--band') }));
+    }
+    series.forEach(s => {
+      if (s.band) svg.appendChild(el('path', { d: bandPath(s.band, xdom, ydom, w, h), fill: s.color, opacity: 0.14 }));
+    });
+    series.forEach(s => {
+      svg.appendChild(el('path', { d: pathFrom(s.pts, xdom, ydom, w, h), fill: 'none', stroke: s.color, 'stroke-width': 2 }));
+      s.pts.forEach(p => svg.appendChild(el('circle', { cx: sx(p[0], xdom, w), cy: sy(p[1], ydom, h), r: 2.6, fill: s.color })));
+      // direct end-label
+      const last = s.pts[s.pts.length - 1];
+      svg.appendChild(el('text', { x: sx(last[0], xdom, w) + 6, y: sy(last[1], ydom, h) + 3, fill: s.color, text: s.label, style: 'font-size:11px' }));
+    });
+    // hover crosshair keyed on the x of the first series
+    const cross = el('line', { class: 'tick', y1: PAD.t, y2: h - PAD.b, opacity: 0 });
+    svg.appendChild(cross);
+    const xs = series[0].pts.map(p => p[0]);
+    svg.addEventListener('mousemove', (ev) => {
+      const rb = svg.getBoundingClientRect();
+      const mx = (ev.clientX - rb.left) / rb.width * w;
+      let bi = 0, bd = 1e9;
+      xs.forEach((xv, i) => { const d = Math.abs(sx(xv, xdom, w) - mx); if (d < bd) { bd = d; bi = i; } });
+      const xv = xs[bi];
+      cross.setAttribute('x1', sx(xv, xdom, w)); cross.setAttribute('x2', sx(xv, xdom, w)); cross.setAttribute('opacity', 1);
+      const rows = series.map(s => `<span style="color:${s.color}">■</span> ${s.label}: <b>${signed(s.pts[bi][1], opts.tipDigits ?? 2)}${opts.unit || ''}</b>`).join('<br>');
+      tip.innerHTML = `${opts.xlabelFmt ? opts.xlabelFmt(xv) : xv}<br>${rows}`;
+      tip.style.left = (sx(xv, xdom, w) / w * 100) + '%';
+      tip.style.top = (sy(Math.max(...series.map(s => s.pts[bi][1])), ydom, h) / h * 100) + '%';
+      tip.style.opacity = 1;
+    });
+    svg.addEventListener('mouseleave', () => { tip.style.opacity = 0; cross.setAttribute('opacity', 0); });
+  }
+
+  // Horizontal bar chart: one row per category, value on x, diverging color by
+  // sign, clustered-CI whiskers, a reserved left gutter for category labels.
+  function barChart(holder, rows) {
+    const w = Math.max(holder.clientWidth || 900, 360), bh = 28;
+    const LEFT = 150, R = 52, TOP = 6, BOT = 30;
+    const h = TOP + BOT + rows.length * bh;
+    const { svg, tip } = frame(holder, w, h);
+    const vals = rows.flatMap(r => [r.net_c, r.ci_lo, r.ci_hi].filter(v => v != null));
+    let lo = Math.min(0, ...vals), hi = Math.max(0, ...vals);
+    const padv = (hi - lo) * 0.08 || 1; lo -= padv; hi += padv;
+    const X = (v) => LEFT + (v - lo) / (hi - lo) * (w - LEFT - R);
+    const x0 = X(0);
+    niceTicks(lo, hi, 6).forEach(t => {
+      const x = X(t);
+      svg.appendChild(el('line', { class: 'tick', x1: x, y1: TOP, x2: x, y2: h - BOT, opacity: 0.5 }));
+      svg.appendChild(el('text', { x, y: h - BOT + 15, 'text-anchor': 'middle', class: 'tabnum', text: signed(t, 0) }));
+    });
+    svg.appendChild(el('line', { class: 'baseline', x1: x0, y1: TOP, x2: x0, y2: h - BOT }));
+    svg.appendChild(el('text', { x: (LEFT + w - R) / 2, y: h - 2, 'text-anchor': 'middle', class: 'ax-title', text: 'net EV (¢/contract)' }));
+    rows.forEach((r, i) => {
+      const yc = TOP + i * bh + bh / 2;
+      const color = r.net_c >= 0 ? css('--pos') : css('--neg');
+      const xv = X(r.net_c);
+      svg.appendChild(el('rect', { x: Math.min(x0, xv), y: yc - 8, width: Math.max(1, Math.abs(xv - x0)), height: 16, rx: 3, fill: color }));
+      if (r.ci_lo != null && r.ci_hi != null) {
+        svg.appendChild(el('line', { x1: X(r.ci_lo), y1: yc, x2: X(r.ci_hi), y2: yc, stroke: css('--ink-2'), 'stroke-width': 1.5, opacity: 0.7 }));
+      }
+      svg.appendChild(el('text', { x: 8, y: yc + 3, style: 'fill:var(--ink)', text: r.label }));
+      svg.appendChild(el('text', { x: xv + (r.net_c >= 0 ? 7 : -7), y: yc + 3, 'text-anchor': r.net_c >= 0 ? 'start' : 'end', class: 'tabnum', style: 'fill:var(--ink-2)', text: signed(r.net_c) }));
+      const hit = el('rect', { x: 0, y: yc - bh / 2, width: w, height: bh, fill: 'transparent' });
+      hit.addEventListener('mousemove', () => {
+        tip.innerHTML = `<b>${r.label}</b><br>net EV <b>${signed(r.net_c)}¢</b> · 95% CI [${signed(r.ci_lo)}, ${signed(r.ci_hi)}]<br>${commas(r.n_events)} events`;
+        tip.style.left = (xv / w * 100) + '%'; tip.style.top = (yc / h * 100) + '%'; tip.style.opacity = 1;
+      });
+      hit.addEventListener('mouseleave', () => tip.style.opacity = 0);
+      svg.appendChild(hit);
+    });
+  }
+  function niceTicks(lo, hi, n) {
+    const span = hi - lo, step = Math.pow(10, Math.floor(Math.log10(span / n)));
+    const err = (span / n) / step, mult = err >= 5 ? 10 : err >= 2 ? 5 : err >= 1 ? 2 : 1;
+    const s = step * mult, start = Math.ceil(lo / s) * s, out = [];
+    for (let v = start; v <= hi + 1e-9; v += s) out.push(Math.round(v * 1e6) / 1e6);
+    return out;
+  }
+
+  // ============================ renderers ===================================
+  function curve(period, role, cat) { return STATS.curves[`${period}|${role}|${cat}`]; }
+
+  function renderCalibration() {
+    calCard.holder.innerHTML = ''; calCard.legend.innerHTML = '';
+    const cat = state.category;
+    const mk = (period, color, label) => {
+      const c = curve(period, 'all', cat); if (!c) return null;
+      const pts = c.map(d => [d.price_c, d.win_pct]);
+      const band = c.every(d => d.win_lo != null) ? c.map(d => [d.price_c, d.win_lo, d.win_hi]) : null;
+      return { pts, band, color, label };
+    };
+    const series = [mk('pre', css('--series-1'), 'Pre'), mk('post', css('--series-2'), 'Post')].filter(Boolean);
+    legendInto(calCard.legend, [['Pre-publication', css('--series-1')], ['Post-publication', css('--series-2')], ['Perfect calibration', css('--baseline')]]);
+    lineChart(calCard.holder, {
+      series, xdom: [0, 100], ydom: [0, 100], xlab: 'price (¢)', ylab: 'win rate (%)',
+      xticks: [0, 20, 40, 60, 80, 100], yticks: [0, 20, 40, 60, 80, 100],
+      refLine: [[0, 0], [100, 100]], unit: '%', tipDigits: 1,
+      xlabelFmt: (v) => `${v}¢ bucket`,
+    });
+  }
+
+  function renderNet() {
+    netCard.holder.innerHTML = ''; netCard.legend.innerHTML = '';
+    const cat = state.category, period = state.period;
+    const mk = (role, color, label) => {
+      const c = curve(period, role, cat); if (!c) return null;
+      const pts = c.map(d => [d.bucket, d.net_c]);
+      const band = c.every(d => d.net_lo != null) ? c.map(d => [d.bucket, d.net_lo, d.net_hi]) : null;
+      return { pts, band, color, label };
+    };
+    const series = [mk('maker', css('--series-1'), 'Maker'), mk('taker', css('--series-2'), 'Taker')].filter(Boolean);
+    if (!series.length) { netCard.holder.appendChild(el('p', { class: 'loading', text: 'No data for this slice.' })); return; }
+    const all = series.flatMap(s => s.pts.map(p => p[1]).concat(s.band ? s.band.flatMap(b => [b[1], b[2]]) : []));
+    let lo = Math.min(...all), hi = Math.max(...all); const pad = (hi - lo) * 0.1 || 1; lo -= pad; hi += pad;
+    legendInto(netCard.legend, [['Maker', css('--series-1')], ['Taker', css('--series-2')], ['80–97¢ window', css('--band')]]);
+    lineChart(netCard.holder, {
+      series, xdom: [0, 100], ydom: [lo, hi], xlab: 'price bucket (¢)', ylab: 'net EV (¢/contract)',
+      xticks: [0, 20, 40, 60, 80, 100], yticks: niceTicks(lo, hi, 5),
+      bandRect: STATS.meta.maker_band_c, unit: '¢', tipDigits: 2, xlabelFmt: (v) => `${v}–${v + 4}¢`,
+    });
+  }
+
+  function renderBars() {
+    barCard.holder.innerHTML = ''; barCard.legend.innerHTML = '';
+    const src = state.liquidity === 'liquid' ? STATS.by_category_liquid : STATS.by_category;
+    const rows = (src[state.period] || []).filter(r => r.n_events >= 5)
+      .slice().sort((a, b) => b.net_c - a.net_c);
+    legendInto(barCard.legend, [['positive edge', css('--pos')], ['negative edge', css('--neg')], ['│ 95% CI', css('--ink-2')]]);
+    barChart(barCard.holder, rows);
+    // table view (accessibility)
+    const det = el('details', { class: 'tableview' });
+    det.appendChild(el('summary', { text: 'Show as table' }));
+    const tbl = el('table');
+    tbl.appendChild(el('tr', {}, [el('th', { text: 'Category' }), el('th', { text: 'net EV ¢' }), el('th', { text: 'CI low' }), el('th', { text: 'CI high' }), el('th', { text: 'events' })]));
+    rows.forEach(r => tbl.appendChild(el('tr', {}, [
+      el('td', { text: r.label }), el('td', { class: 'tabnum', text: signed(r.net_c) }),
+      el('td', { class: 'tabnum', text: signed(r.ci_lo) }), el('td', { class: 'tabnum', text: signed(r.ci_hi) }),
+      el('td', { class: 'tabnum', text: commas(r.n_events) }),
+    ])));
+    det.appendChild(tbl);
+    barCard.holder.appendChild(det);
+  }
+
+  function legendInto(node, items) {
+    node.innerHTML = '';
+    items.forEach(([label, color]) => {
+      node.appendChild(el('span', {}, [el('span', { class: 'sw', style: `background:${color}` }), document.createTextNode(label)]));
+    });
+  }
+
+  function footer() {
+    const f = el('footer');
+    f.innerHTML = `
+      <p><b>How to read this.</b> Both sides of every trade enter the panel (Whelan-style contract counting);
+      confidence intervals are an event-clustered bootstrap (B=1000), because outcomes within an event are correlated.
+      "Maker" returns condition on fills that actually happened, so adverse selection is embedded.</p>
+      <p><b>Caveats.</b> Liquidity terciles are post-hoc; the fee coefficient is brief-sourced (official PDF was unreachable) and sensitivity-tested;
+      capacity is inferred from market volume, not live book depth. Full methodology and caveats are in the
+      <a href="https://github.com/dlustig/kalshi-flb/blob/main/analysis/out/report.md">report</a> and
+      <a href="https://github.com/dlustig/kalshi-flb/blob/main/DESIGN.md">DESIGN.md</a>.</p>
+      <p style="color:var(--muted)">Read-only research. Not trading advice. Built with DuckDB + hand-rolled SVG · <a href="https://github.com/dlustig/kalshi-flb">github.com/dlustig/kalshi-flb</a></p>`;
+    return f;
+  }
+
+  // ---- master render + resize ---------------------------------------------
+  function render() {
+    document.getElementById('verdict-line').textContent =
+      `the edge survives, ~${fmt(STATS.kpi.attenuation_pct, 0)}% attenuated, makers only, not in sports`;
+    renderKpis(); renderCalibration(); renderNet(); renderBars();
+  }
+  render();
+  let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(render, 150); });
+
+  // theme toggle
+  document.getElementById('theme').addEventListener('click', () => {
+    const now = document.documentElement.getAttribute('data-theme');
+    const next = now === 'dark' ? 'light' : now === 'light' ? 'dark'
+      : (matchMedia('(prefers-color-scheme: dark)').matches ? 'light' : 'dark');
+    document.documentElement.setAttribute('data-theme', next);
+    render();
+  });
+})();
+</script>
+</body>
+</html>

@@ -41,8 +41,9 @@ prices imply, after accounting for modeled fees. For example, a hypothetical
 Whether that produces a positive average depends on the outcome rate and costs.
 The calculations use observed trade quantities, not independent coin flips.
 
-The catch: the academic study that documented this bias (Bürgi, Deng & Whelan)
-was **published in September 2025**, and the authors warned that publicity might
+The catch: the academic study that documented this bias,
+[*Makers and Takers: The Economics of the Kalshi Prediction Market*](https://doi.org/10.2139/ssrn.5502658)
+by Bürgi, Deng & Whelan, was **posted to SSRN in September 2025**, and the authors warned that publicity might
 erode it. **This repo compares the periods before and after publication** —
 collecting **672M real Kalshi trades** into DuckDB and re-measuring the pattern
 net of modeled fees, with a research pass/fail rule fixed before the analysis.

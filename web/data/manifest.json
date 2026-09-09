@@ -12,7 +12,7 @@
     "window_start": "2024-01-01"
   },
   "build": {
-    "generated_at": "2026-09-08T18:54:26Z"
+    "generated_at": "2026-09-09T14:44:53Z"
   },
   "data_quality": {
     "archived": {
@@ -74,8 +74,8 @@
       "sha256": "1f468d8806a733e67c7460872e58264fadddda1ba7beaca0905afd52aef2c7f8"
     },
     "web/exhibit.html": {
-      "bytes": 25462,
-      "sha256": "3cab44fba3ef9a52b1f556850ab0c7a585a16f67695ab50a69ec96f7edd5f73f"
+      "bytes": 25662,
+      "sha256": "3a353e0e72f087ae799611d7010ee9b15078aa1181ea32345acb4ff209acf023"
     },
     "web/exhibit.mjs": {
       "bytes": 5606,
@@ -148,8 +148,8 @@
       "sha256": "8e3b4a0d23cfb62ccf8a61def0dd74a89a71b0402eac2913af8ab2320504918f"
     },
     "index.html": {
-      "bytes": 37532,
-      "sha256": "2e555d473172899d0bbc6990146f4643c4955955610ff22c9fd0d9eae1c4c39c"
+      "bytes": 37732,
+      "sha256": "9f98026e48a379cfc38196607ecdbe669f66e67a0a4ecd428c5827269e62a55a"
     },
     "snapshot.json": {
       "bytes": 784,
@@ -161,7 +161,7 @@
     "label": "July 2, 2026 research snapshot"
   },
   "source": {
-    "revision": "b42053702e93817db357037abed5f0b0f9c84be5",
+    "revision": "c8c24770cfbbd368514305ef510643c73bbbdaad",
     "url": "https://github.com/dlustig/kalshi-flb"
   }
 }

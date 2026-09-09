@@ -13,7 +13,7 @@ import subprocess
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal, overload
 from urllib.parse import SplitResult, urlsplit, urlunsplit
 
 
@@ -109,6 +109,14 @@ def _required(mapping: dict[str, Any], key: str, context: str) -> Any:
     if key not in mapping:
         raise BuildError(f"missing {context}.{key}")
     return mapping[key]
+
+
+@overload
+def _number(value: Any, context: str, *, nullable: Literal[False] = False) -> int | float: ...
+
+
+@overload
+def _number(value: Any, context: str, *, nullable: bool) -> int | float | None: ...
 
 
 def _number(value: Any, context: str, *, nullable: bool = False) -> int | float | None:

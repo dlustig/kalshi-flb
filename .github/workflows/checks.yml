@@ -20,6 +20,8 @@ jobs:
         with:
           node-version: "22"
           package-manager-cache: false
+      - name: Python typecheck
+        run: uv run --frozen mypy
       - name: Python research and publication tests
         run: uv run --frozen pytest
       - name: Browser model tests

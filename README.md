@@ -147,6 +147,10 @@ time-partitioned passes into `agg_obs`, and every statistic reads that.
   missing-value preservation, and browser selection/URL behavior. Run Python tests
   with `uv run pytest` and browser model tests with
   `node --test tests/web/*.test.mjs` (Node 22).
+- **Lightweight typechecking:** `uv run --frozen mypy` checks the Python package
+  and exhibit builder in CI, including bodies of unannotated functions. This is
+  gradual typing, not strict mode: pandas internals and the standalone data
+  maintenance/export scripts are outside this initial coverage.
 
 ---
 
@@ -154,6 +158,7 @@ time-partitioned passes into `agg_obs`, and every statistic reads that.
 
 ```bash
 uv sync
+uv run --frozen mypy                   # Python typecheck (also runs in CI)
 uv run pytest                          # analysis + publication tests
 
 uv run kalshi-flb status               # DB + per-stream collection state

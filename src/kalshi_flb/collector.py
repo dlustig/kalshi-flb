@@ -12,6 +12,7 @@ import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
+from typing import TypedDict, cast
 
 from . import db
 from .api import KalshiClient
@@ -21,6 +22,12 @@ MARKETS_STOP_TS = datetime(2023, 10, 1, tzinfo=UTC)  # early-stop buffer
 EARLY_STOP_PAGES = 3  # consecutive all-below-threshold pages before stopping
 LIVE_OVERLAP_S = 3600  # re-walk overlap for live trade sync (dedup absorbs it)
 LOG_EVERY = 25
+
+
+class _MarketWalkState(TypedDict):
+    monotonic: bool
+    below_streak: int
+    prev_min: datetime | None
 
 
 def _parse_ts(s: str) -> datetime:
@@ -118,7 +125,7 @@ def collect_markets_hist(client, con, max_pages=None) -> int:
     MARKETS_STOP_TS — but only while the observed descending order holds.
     Any violation disables early stop and the walk runs to exhaustion.
     """
-    state = {"monotonic": True, "below_streak": 0, "prev_min": None}
+    state: _MarketWalkState = {"monotonic": True, "below_streak": 0, "prev_min": None}
 
     def hook(records) -> bool:
         stamps = [_parse_ts(r["settlement_ts"]) for r in records
@@ -333,7 +340,9 @@ def sync(db_path, rps: float = 8.0) -> dict:
 
 def status(db_path) -> dict:
     con = db.connect(db_path)
-    tables = {t: con.execute(f"SELECT count(*) FROM {t}").fetchone()[0]
+    # These aggregate SELECTs have no GROUP BY and always return one row,
+    # including on empty tables; fetchone's general annotation also allows None.
+    tables = {t: cast(tuple[int], con.execute(f"SELECT count(*) FROM {t}").fetchone())[0]
               for t in ["series", "events", "markets", "trades"]}
     streams = {
         r[0]: {"cursor": bool(r[1]), "watermark": str(r[2]), "rows": r[3],
@@ -342,13 +351,13 @@ def status(db_path) -> dict:
             "SELECT stream, cursor, watermark_ts, rows_total, done, updated_at "
             "FROM stream_state ORDER BY stream").fetchall()
     }
-    span = con.execute(
-        "SELECT min(created_time), max(created_time) FROM trades").fetchone()
-    rate = con.execute(
+    span = cast(tuple[datetime | None, datetime | None], con.execute(
+        "SELECT min(created_time), max(created_time) FROM trades").fetchone())
+    rate = cast(tuple[float | None], con.execute(
         "SELECT sum(rows) / greatest(epoch(max(ts)) - epoch(min(ts)), 1) "
         "FROM (SELECT ts, rows FROM collection_log "
         "      WHERE stream='trades_hist' AND status='running' "
-        "      ORDER BY ts DESC LIMIT 10)").fetchone()[0]
+        "      ORDER BY ts DESC LIMIT 10)").fetchone())[0]
     out = {"tables": tables, "streams": streams,
            "trades_span": [str(span[0]), str(span[1])],
            "trades_hist_rows_per_s": float(rate) if rate else None}

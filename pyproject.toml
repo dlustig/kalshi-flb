@@ -20,7 +20,7 @@ dependencies = [
 kalshi-flb = "kalshi_flb.cli:main"
 
 [dependency-groups]
-dev = ["pytest>=8"]
+dev = ["pytest>=8", "mypy>=2.3.1,<3"]
 
 [build-system]
 requires = ["hatchling"]
@@ -32,3 +32,15 @@ packages = ["src/kalshi_flb"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src", "."]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["src", "scripts/build_exhibit.py"]
+check_untyped_defs = true
+warn_unused_ignores = true
+
+# DataFrame operations remain covered by the analytical tests. Avoid a broad
+# missing-import exemption: other missing dependencies must still be reported.
+[[tool.mypy.overrides]]
+module = ["pandas", "pandas.*"]
+ignore_missing_imports = true

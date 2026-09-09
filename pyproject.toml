@@ -31,3 +31,4 @@ packages = ["src/kalshi_flb"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src", "."]

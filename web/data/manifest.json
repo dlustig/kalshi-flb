@@ -1,0 +1,167 @@
+{
+  "analysis": {
+    "aggregate_count": 48759259,
+    "analysis_date": "2026-07-03",
+    "curve_bootstrap_replicates": 400,
+    "generated_at": "2026-07-03 03:31Z",
+    "headline_bootstrap_replicates": 1000,
+    "publication_date": "2025-09-18",
+    "trade_count": 671921586,
+    "trade_timestamp_end": "2026-07-02 03:00:00.354546-04:00",
+    "trade_timestamp_start": "2023-12-31 19:48:18.151070-05:00",
+    "window_start": "2024-01-01"
+  },
+  "build": {
+    "generated_at": "2026-09-08T18:54:26Z"
+  },
+  "data_quality": {
+    "archived": {
+      "checked_at": "2026-07-02",
+      "evidence_source": "analysis/out/dq-2026-07-02.log",
+      "note": "Historical data-quality gate for the archived July research snapshot; date attributed from the original log file metadata.",
+      "status": "pass"
+    },
+    "fresh": {
+      "checked_at": "2026-09-08",
+      "evidence_source": "analysis/out/dq-2026-09-08.log",
+      "note": "Publication-time freshness failed because the frozen July snapshot has no August or September 2026 trades; all other DQ checks passed.",
+      "status": "fail"
+    }
+  },
+  "inputs": {
+    "analysis/out/VERDICT.md": {
+      "bytes": 893,
+      "sha256": "cb2870a7751c620a1310c00f45dadb7ef1199be2cf4afcfcdb0a235e6b61708d"
+    },
+    "analysis/out/dq-2026-07-02.log": {
+      "bytes": 502,
+      "sha256": "22f1f39008c43503492ad3ed6d5d901b45deadd036904aebbe951322efb816a7"
+    },
+    "analysis/out/dq-2026-09-08.log": {
+      "bytes": 541,
+      "sha256": "88caa369e88dc41702f22b1a856a6c750b93231dd868543a48a95ce24212f435"
+    },
+    "analysis/out/plots/calibration_pre_post.png": {
+      "bytes": 69488,
+      "sha256": "ea4d1eb07c5cd0b5ba3016c4eaf3c671a29c08ba2601dcd3b1654cc811dda166"
+    },
+    "analysis/out/plots/net_return_by_bucket.png": {
+      "bytes": 103739,
+      "sha256": "c6c3d1cda8ef8dd3256cd0ebc29a4f1adb28c0285fdd26064902a9a5cad52061"
+    },
+    "analysis/out/report.md": {
+      "bytes": 14592,
+      "sha256": "667110845480a22b3c1248d7a717214876e0a1c0542af293aad272f01487ddd8"
+    },
+    "scripts/build_exhibit.py": {
+      "bytes": 27371,
+      "sha256": "2a8f08b1cb7d915501c4b926a4c7c93edd9c50cbedf85e011f9cd4b5489c5f4a"
+    },
+    "web/data/stats.json": {
+      "bytes": 162934,
+      "sha256": "ca8e900c415eb9eabbec9bc2ce03bdae8a1229b3e8fbc6efb84cff32a6ada84e"
+    },
+    "web/exhibit-charts.mjs": {
+      "bytes": 11038,
+      "sha256": "ab85e2420bf725cf9b26c382dd6ffe76d2f7377087e6508cfa789cd9ea3e79a7"
+    },
+    "web/exhibit-model.mjs": {
+      "bytes": 8353,
+      "sha256": "59db66c9ea695458273d338cbbaa455893484488f0e8dfc1cf9e33d50ce12295"
+    },
+    "web/exhibit.css": {
+      "bytes": 24422,
+      "sha256": "1f468d8806a733e67c7460872e58264fadddda1ba7beaca0905afd52aef2c7f8"
+    },
+    "web/exhibit.html": {
+      "bytes": 25462,
+      "sha256": "3cab44fba3ef9a52b1f556850ab0c7a585a16f67695ab50a69ec96f7edd5f73f"
+    },
+    "web/exhibit.mjs": {
+      "bytes": 5606,
+      "sha256": "02c92d22c508f911b5d2f320e9d5098cbda864d345d746580f720ab2f3d5ecd7"
+    },
+    "web/snapshot.json": {
+      "bytes": 784,
+      "sha256": "2561f2071cc37490f9bcc697232e44175cefa33d1d02601848fab25863d4e51e"
+    }
+  },
+  "outputs": {
+    "data/stats.json": {
+      "bytes": 162934,
+      "sha256": "ca8e900c415eb9eabbec9bc2ce03bdae8a1229b3e8fbc6efb84cff32a6ada84e"
+    },
+    "evidence/VERDICT.md": {
+      "bytes": 893,
+      "sha256": "cb2870a7751c620a1310c00f45dadb7ef1199be2cf4afcfcdb0a235e6b61708d"
+    },
+    "evidence/dq-2026-07-02.log": {
+      "bytes": 502,
+      "sha256": "22f1f39008c43503492ad3ed6d5d901b45deadd036904aebbe951322efb816a7"
+    },
+    "evidence/dq-2026-09-08.log": {
+      "bytes": 541,
+      "sha256": "88caa369e88dc41702f22b1a856a6c750b93231dd868543a48a95ce24212f435"
+    },
+    "evidence/plots/calibration_pre_post.png": {
+      "bytes": 69488,
+      "sha256": "ea4d1eb07c5cd0b5ba3016c4eaf3c671a29c08ba2601dcd3b1654cc811dda166"
+    },
+    "evidence/plots/net_return_by_bucket.png": {
+      "bytes": 103739,
+      "sha256": "c6c3d1cda8ef8dd3256cd0ebc29a4f1adb28c0285fdd26064902a9a5cad52061"
+    },
+    "evidence/report.md": {
+      "bytes": 14592,
+      "sha256": "667110845480a22b3c1248d7a717214876e0a1c0542af293aad272f01487ddd8"
+    },
+    "exhibit-charts.mjs": {
+      "bytes": 11038,
+      "sha256": "ab85e2420bf725cf9b26c382dd6ffe76d2f7377087e6508cfa789cd9ea3e79a7"
+    },
+    "exhibit-model.mjs": {
+      "bytes": 8353,
+      "sha256": "59db66c9ea695458273d338cbbaa455893484488f0e8dfc1cf9e33d50ce12295"
+    },
+    "exhibit.css": {
+      "bytes": 24422,
+      "sha256": "1f468d8806a733e67c7460872e58264fadddda1ba7beaca0905afd52aef2c7f8"
+    },
+    "exhibit.mjs": {
+      "bytes": 5606,
+      "sha256": "02c92d22c508f911b5d2f320e9d5098cbda864d345d746580f720ab2f3d5ecd7"
+    },
+    "figures/default-lab.svg": {
+      "bytes": 2755,
+      "sha256": "e6e6d1bbc1b1f3ce6bd1462fb30a741ba428e71362d5e8549623f508faa2aabb"
+    },
+    "figures/hero.svg": {
+      "bytes": 4584,
+      "sha256": "652e2b6b3b9bc02c31ee779ec64667774fb1b36bbd0b2eddaaba7b98f3bfca2b"
+    },
+    "figures/post-interval.svg": {
+      "bytes": 1224,
+      "sha256": "0f6d485e2e6b2d1f40fd08e2bd3c572d9b373a6b58e1030432c7be7d8cd87872"
+    },
+    "figures/pre-interval.svg": {
+      "bytes": 1218,
+      "sha256": "8e3b4a0d23cfb62ccf8a61def0dd74a89a71b0402eac2913af8ab2320504918f"
+    },
+    "index.html": {
+      "bytes": 37532,
+      "sha256": "2e555d473172899d0bbc6990146f4643c4955955610ff22c9fd0d9eae1c4c39c"
+    },
+    "snapshot.json": {
+      "bytes": 784,
+      "sha256": "2561f2071cc37490f9bcc697232e44175cefa33d1d02601848fab25863d4e51e"
+    }
+  },
+  "schema_version": 1,
+  "snapshot": {
+    "label": "July 2, 2026 research snapshot"
+  },
+  "source": {
+    "revision": "b42053702e93817db357037abed5f0b0f9c84be5",
+    "url": "https://github.com/dlustig/kalshi-flb"
+  }
+}

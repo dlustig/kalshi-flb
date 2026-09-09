@@ -1,0 +1,35 @@
+name: Verify research and exhibit
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          package-manager-cache: false
+      - name: Python research and publication tests
+        run: uv run --frozen pytest
+      - name: Browser model tests
+        run: node --test tests/web/*.test.mjs
+      - name: JavaScript syntax
+        run: |
+          node --check web/exhibit-model.mjs
+          node --check web/exhibit-charts.mjs
+          node --check web/exhibit.mjs
+      - name: Build portable static release
+        run: uv run --frozen python scripts/build_exhibit.py --out dist/site
+      - name: Whitespace
+        run: git diff --check

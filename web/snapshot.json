@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "snapshot_label": "July 2, 2026 research snapshot",
+  "aggregate_count": 48759259,
+  "curve_bootstrap_replicates": 400,
+  "headline_bootstrap_replicates": 1000,
+  "data_quality": {
+    "archived": {
+      "status": "pass",
+      "checked_at": "2026-07-02",
+      "evidence_source": "analysis/out/dq-2026-07-02.log",
+      "note": "Historical data-quality gate for the archived July research snapshot; date attributed from the original log file metadata."
+    },
+    "fresh": {
+      "status": "fail",
+      "checked_at": "2026-09-08",
+      "evidence_source": "analysis/out/dq-2026-09-08.log",
+      "note": "Publication-time freshness failed because the frozen July snapshot has no August or September 2026 trades; all other DQ checks passed."
+    }
+  }
+}

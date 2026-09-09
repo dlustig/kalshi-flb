@@ -1,0 +1,10 @@
+PASS  nonempty: 671,921,586 trades collected
+PASS  orphan_trades: 9,576,369 / 671,921,586 = 1.425% (< 5% required)
+PASS  category_coverage: 99.997% of universe volume category-mapped (>= 99% required)
+PASS  result_domain: 0 settled binary markets with unexpected result values
+PASS  no_dupe_trade_ids: 0 duplicates
+PASS  event_ticker_present: 0 universe markets with null event_ticker (cluster key)
+FAIL  monthly_coverage: empty months: ['2026-08', '2026-09']
+PASS  streams_done: incomplete streams: none
+
+DQ GATE: FAIL ['monthly_coverage']
